@@ -18,13 +18,15 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     model_config = SettingsConfigDict(
+        env_prefix="AGENTHUB_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        frozen=True,
     )
 
 
 @lru_cache
 def get_settings() -> Settings:
-    """Return one immutable-by-convention settings instance per process."""
+    """Return a cached settings instance per process."""
     return Settings()
