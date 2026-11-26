@@ -31,11 +31,14 @@ Supported variables are:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `APP_NAME` | `AgentHub API` | Service name used in API metadata and health output. |
-| `APP_VERSION` | `0.1.0` | API version used in metadata and health output. |
-| `APP_ENV` | `development` | One of `development`, `test`, `staging`, or `production`. |
-| `DEBUG` | `false` | Enables FastAPI debug behavior when explicitly set. |
-| `API_V1_PREFIX` | `/api/v1` | Prefix for version 1 API routes. |
+| `AGENTHUB_APP_NAME` | `AgentHub API` | Service name used in API metadata and health output. |
+| `AGENTHUB_APP_VERSION` | `0.1.0` | API version used in metadata and health output. |
+| `AGENTHUB_APP_ENV` | `development` | One of `development`, `test`, `staging`, or `production`. |
+| `AGENTHUB_DEBUG` | `false` | Enables FastAPI debug behavior when explicitly set. |
+| `AGENTHUB_API_V1_PREFIX` | `/api/v1` | Prefix for version 1 API routes. |
+| `AGENTHUB_LOG_LEVEL` | `INFO` | Minimum severity emitted by structured application logging. |
+| `AGENTHUB_CORS_ALLOWED_ORIGINS` | `["http://localhost:3000"]` | JSON list of browser origins allowed to call the API. |
+| `AGENTHUB_CORS_ALLOW_CREDENTIALS` | `true` | Allows credentials for explicitly configured origins. |
 
 The local `.env` file is ignored by Git. `.env.example` contains no secrets and remains tracked.
 
@@ -45,7 +48,9 @@ The local `.env` file is ignored by Git. `.env.example` contains no secrets and 
 uv run uvicorn app.main:app --reload
 ```
 
-If the parent shell already defines an unrelated, non-boolean `DEBUG` value, unset it or start AgentHub explicitly with `DEBUG=false`. Invalid configuration is rejected intentionally at startup.
+Invalid configuration is rejected intentionally at startup. Production deployments must explicitly configure their frontend origins rather than using a wildcard with credentials.
+
+Every HTTP response includes an `X-Correlation-ID`. A valid UUID supplied in the same request header is preserved; missing or invalid values are replaced. Application logs are emitted as JSON and include this identifier for request tracing. API failures use a consistent error envelope containing `error` and `correlation_id` fields.
 
 Available endpoints:
 

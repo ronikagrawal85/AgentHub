@@ -9,7 +9,11 @@ from app.main import create_app
 
 
 def test_http_exception_uses_standard_error_envelope(client: TestClient) -> None:
-    response = client.get("/api/v1/unknown")
+    correlation_id = "d4e107d3-e26a-49c8-8178-d20f87e3e58b"
+    response = client.get(
+        "/api/v1/unknown",
+        headers={"X-Correlation-ID": correlation_id},
+    )
 
     assert response.status_code == 404
     assert response.json() == {
@@ -17,7 +21,8 @@ def test_http_exception_uses_standard_error_envelope(client: TestClient) -> None
             "code": "http_404",
             "message": "Not Found",
             "details": None,
-        }
+        },
+        "correlation_id": correlation_id,
     }
 
 
@@ -36,6 +41,7 @@ def test_request_validation_error_includes_structured_details() -> None:
     assert body["error"]["code"] == "request_validation_error"
     assert body["error"]["message"] == "Request validation failed"
     assert body["error"]["details"][0]["loc"] == ["query", "limit"]
+    assert body["correlation_id"] == response.headers["X-Correlation-ID"]
 
 
 def test_unhandled_exception_returns_safe_error_and_is_logged(
@@ -53,12 +59,14 @@ def test_unhandled_exception_returns_safe_error_and_is_logged(
         response = client.get("/test-failure")
 
     assert response.status_code == 500
-    assert response.json() == {
+    body = response.json()
+    assert body == {
         "error": {
             "code": "internal_server_error",
             "message": "An unexpected error occurred",
             "details": None,
-        }
+        },
+        "correlation_id": response.headers["X-Correlation-ID"],
     }
     assert "sensitive internal failure" not in response.text
     assert "Unhandled API exception" in caplog.text

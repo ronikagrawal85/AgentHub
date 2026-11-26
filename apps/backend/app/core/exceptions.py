@@ -11,6 +11,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.logging import get_correlation_id
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,6 +28,7 @@ class ErrorResponse(BaseModel):
     """Public API error response."""
 
     error: ErrorDetail
+    correlation_id: str | None
 
 
 def _error_response(
@@ -37,7 +40,8 @@ def _error_response(
     headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     response = ErrorResponse(
-        error=ErrorDetail(code=code, message=message, details=details)
+        error=ErrorDetail(code=code, message=message, details=details),
+        correlation_id=get_correlation_id(),
     )
     return JSONResponse(
         status_code=status_code,

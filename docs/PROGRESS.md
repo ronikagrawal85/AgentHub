@@ -3,9 +3,9 @@
 ## Status summary
 
 - **Current phase:** Phase 1 — Project Foundation
-- **Current task:** Task 003 — Global Exception Handling
+- **Current task:** Task 004 — Foundation API Hardening
 - **Project state:** Initial monorepo and backend foundation implemented
-- **Application state:** FastAPI liveness API and global exception handling implemented; business modules not started
+- **Application state:** FastAPI liveness API, global exception handling, structured logging, correlation IDs, and CORS implemented; business modules not started
 - **Last updated:** 2026-11-26
 
 Only confirmed work is recorded as complete. Planned features are not evidence of implementation.
@@ -38,7 +38,7 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Module | Planned phase | Status | Evidence |
 | --- | --- | --- | --- |
 | Next.js frontend | 7 | Not started | No frontend application exists. |
-| FastAPI backend foundation | 1 | Complete | Python 3.12 uv project, typed settings, application factory, versioned routing, liveness endpoint, global exception handling, OpenAPI documentation, tests, and Ruff checks verified in Tasks 002–003. |
+| FastAPI backend foundation | 1 | Complete | Python 3.12 uv project, typed settings, application factory, versioned routing, liveness endpoint, global exception handling, structured logging, correlation IDs, CORS, OpenAPI documentation, tests, and Ruff checks verified in Tasks 002–004. |
 | Authentication | 1 | Not started | No implementation exists. |
 | Users | 1 | Not started | No implementation exists. |
 | Workspaces/organizations | 1 | Not started | No implementation exists. |
@@ -60,7 +60,7 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Security and guardrails | 1–6 | Not started | No implementation exists. |
 | Background processing/Celery | 2 | Not started | No implementation exists. |
 | Synthetic enterprise dataset | 2 | Not started | No dataset exists. |
-| Automated backend tests | 1–8 | In progress | Ten FastAPI foundation and exception-handling tests pass; feature-specific suites remain pending. |
+| Automated backend tests | 1–8 | In progress | Sixteen FastAPI foundation, exception-handling, configuration, and observability tests pass; feature-specific suites remain pending. |
 | Frontend/Playwright tests | 7–8 | Not started | No test suite exists. |
 | Dockerized local application | 1–8 | Not started | Docker container execution is not yet verified; no application services are configured. |
 | CI/CD | 8 | Not started | No workflow exists. |
@@ -81,6 +81,39 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 
 - Docker container execution still requires verification.
 - No other blocker has been confirmed.
+
+## Task 004 — Foundation API Hardening
+
+### Implemented
+
+- Configured standard-library JSON logging with UTC timestamps, severity, logger name, message, request fields, correlation IDs, and exception information.
+- Added request middleware that accepts valid UUID correlation IDs, generates replacements for missing or invalid values, returns `X-Correlation-ID` on every HTTP response, and logs request completion and duration.
+- Preserved correlation context and CORS processing for unexpected HTTP 500 responses through an application exception boundary.
+- Configured settings-driven CORS with an explicit local Next.js development origin, credential support, all methods, and all request headers.
+- Rejected insecure configuration that combines credentialed CORS with a wildcard origin.
+- Extended the consistent API error envelope with the request correlation ID.
+- Documented all prefixed environment variables and corrected earlier unprefixed fixture and README examples.
+- Added six tests for correlation propagation, invalid-ID replacement, allowed and rejected CORS preflights, JSON log structure, and unsafe wildcard CORS configuration.
+
+### Verification evidence
+
+Commands were run from `apps/backend` with `UV_CACHE_DIR` set to a temporary writable directory.
+
+| Command or check | Actual result |
+| --- | --- |
+| `uv run ruff check .` | Passed: `All checks passed!` |
+| `uv run ruff format --check .` | Passed: 18 files already formatted. |
+| `uv run pytest -v` | Passed outside the managed filesystem sandbox: 16 tests passed with 1 upstream Starlette deprecation warning. |
+| CORS behavior | Configured origin accepted; unconfigured origin rejected; credentialed wildcard configuration rejected. |
+| Correlation behavior | Valid UUID preserved; invalid ID replaced; response header, error body, and structured logs share the request ID. |
+
+The managed filesystem sandbox restriction on FastAPI TestClient remains unchanged, so the full suite was run outside it. No external service, Docker container, API key, network API, or new dependency was used.
+
+### Remaining work
+
+- The Phase 1 deliverable remains incomplete; authentication, tenant-aware workspaces, RBAC, persistence, and local infrastructure are pending.
+- The upstream Starlette TestClient deprecation warning remains; dependency changes were not introduced for this task.
+- All 31 core AI learning objectives remain pending because these capabilities are backend foundation work.
 
 ## Task 003 — Global Exception Handling
 

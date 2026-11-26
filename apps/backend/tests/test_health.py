@@ -60,6 +60,15 @@ def test_invalid_application_environment_is_rejected() -> None:
         Settings(app_env="invalid", _env_file=None)  # type: ignore[arg-type]
 
 
+def test_credentialed_cors_rejects_wildcard_origin() -> None:
+    with pytest.raises(ValidationError, match="CORS wildcard origins"):
+        Settings(
+            cors_allowed_origins=["*"],
+            cors_allow_credentials=True,
+            _env_file=None,
+        )
+
+
 def test_environment_can_override_settings_without_env_file(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

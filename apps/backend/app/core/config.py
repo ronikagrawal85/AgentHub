@@ -3,6 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 AppEnvironment = Literal["development", "test", "staging", "production"]
@@ -16,6 +17,20 @@ class Settings(BaseSettings):
     app_env: AppEnvironment = "development"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    cors_allowed_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
+    cors_allow_credentials: bool = True
+
+    @model_validator(mode="after")
+    def validate_cors_configuration(self) -> "Settings":
+        """Prevent credentialed browser access from using a wildcard origin."""
+        if self.cors_allow_credentials and "*" in self.cors_allowed_origins:
+            raise ValueError(
+                "CORS wildcard origins cannot be used when credentials are enabled"
+            )
+        return self
 
     model_config = SettingsConfigDict(
         env_prefix="AGENTHUB_",

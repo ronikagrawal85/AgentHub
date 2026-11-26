@@ -10,11 +10,11 @@ from app.core.config import Settings
 # Establish deterministic values before importing the module-level ASGI application.
 environ.update(
     {
-        "APP_NAME": "AgentHub API",
-        "APP_VERSION": "0.1.0",
-        "APP_ENV": "test",
-        "DEBUG": "false",
-        "API_V1_PREFIX": "/api/v1",
+        "AGENTHUB_APP_NAME": "AgentHub API",
+        "AGENTHUB_APP_VERSION": "0.1.0",
+        "AGENTHUB_APP_ENV": "test",
+        "AGENTHUB_DEBUG": "false",
+        "AGENTHUB_API_V1_PREFIX": "/api/v1",
     }
 )
 
