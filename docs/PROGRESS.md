@@ -3,10 +3,10 @@
 ## Status summary
 
 - **Current phase:** Phase 1 — Project Foundation
-- **Current task:** Task 002 — Monorepo and FastAPI Foundation
+- **Current task:** Task 003 — Global Exception Handling
 - **Project state:** Initial monorepo and backend foundation implemented
-- **Application state:** FastAPI liveness API implemented; business modules not started
-- **Last updated:** 2026-11-24
+- **Application state:** FastAPI liveness API and global exception handling implemented; business modules not started
+- **Last updated:** 2026-11-26
 
 Only confirmed work is recorded as complete. Planned features are not evidence of implementation.
 
@@ -38,7 +38,7 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Module | Planned phase | Status | Evidence |
 | --- | --- | --- | --- |
 | Next.js frontend | 7 | Not started | No frontend application exists. |
-| FastAPI backend foundation | 1 | Complete | Python 3.12 uv project, typed settings, application factory, versioned routing, liveness endpoint, OpenAPI documentation, tests, and Ruff checks verified in Task 002. |
+| FastAPI backend foundation | 1 | Complete | Python 3.12 uv project, typed settings, application factory, versioned routing, liveness endpoint, global exception handling, OpenAPI documentation, tests, and Ruff checks verified in Tasks 002–003. |
 | Authentication | 1 | Not started | No implementation exists. |
 | Users | 1 | Not started | No implementation exists. |
 | Workspaces/organizations | 1 | Not started | No implementation exists. |
@@ -60,7 +60,7 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Security and guardrails | 1–6 | Not started | No implementation exists. |
 | Background processing/Celery | 2 | Not started | No implementation exists. |
 | Synthetic enterprise dataset | 2 | Not started | No dataset exists. |
-| Automated backend tests | 1–8 | In progress | Initial seven-test FastAPI foundation suite passes; feature-specific suites remain pending. |
+| Automated backend tests | 1–8 | In progress | Ten FastAPI foundation and exception-handling tests pass; feature-specific suites remain pending. |
 | Frontend/Playwright tests | 7–8 | Not started | No test suite exists. |
 | Dockerized local application | 1–8 | Not started | Docker container execution is not yet verified; no application services are configured. |
 | CI/CD | 8 | Not started | No workflow exists. |
@@ -81,6 +81,38 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 
 - Docker container execution still requires verification.
 - No other blocker has been confirmed.
+
+## Task 003 — Global Exception Handling
+
+### Implemented
+
+- Added a typed, consistent JSON error envelope for API failures.
+- Added global handlers for HTTP errors, request validation failures, and unexpected exceptions.
+- Preserved HTTP status codes and headers while normalizing framework HTTP errors.
+- Included structured validation details for invalid requests.
+- Logged unexpected exceptions while returning a fixed HTTP 500 response that does not expose internal exception details.
+- Registered the handlers through the existing application factory so every application instance uses the same contract.
+- Added three deterministic tests covering 404 normalization, validation errors, and safe unexpected-error responses and logging.
+- Corrected the existing environment override test to use the configured `AGENTHUB_` prefix.
+
+### Verification evidence
+
+Commands were run from `apps/backend` with `UV_CACHE_DIR` set to a temporary writable directory.
+
+| Command or check | Actual result |
+| --- | --- |
+| `uv run ruff check .` | Passed: `All checks passed!` |
+| `uv run ruff format --check .` | Passed: 15 files already formatted. |
+| `uv run pytest -v` | Passed outside the managed filesystem sandbox: 10 tests passed with 1 upstream Starlette deprecation warning. |
+| Unexpected exception response | Verified HTTP 500 with a stable public message and no internal exception text. |
+
+The managed filesystem sandbox again prevented FastAPI TestClient's AnyIO portal from completing. The full suite passed outside that sandbox. No external service, Docker container, API key, or network API was used.
+
+### Remaining work
+
+- The Phase 1 deliverable remains incomplete; authentication, tenant-aware workspaces, RBAC, persistence, and local infrastructure are pending.
+- The upstream Starlette TestClient deprecation warning remains; dependency changes were not introduced for this task.
+- All 31 core AI learning objectives remain pending because global exception handling is backend foundation work rather than practical implementation of those objectives.
 
 ## Task 002 — Monorepo and FastAPI Foundation
 

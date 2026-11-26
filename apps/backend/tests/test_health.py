@@ -63,9 +63,9 @@ def test_invalid_application_environment_is_rejected() -> None:
 def test_environment_can_override_settings_without_env_file(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("APP_NAME", "Environment AgentHub API")
-    monkeypatch.setenv("APP_VERSION", "2.0.0")
-    monkeypatch.setenv("APP_ENV", "test")
+    monkeypatch.setenv("AGENTHUB_APP_NAME", "Environment AgentHub API")
+    monkeypatch.setenv("AGENTHUB_APP_VERSION", "2.0.0")
+    monkeypatch.setenv("AGENTHUB_APP_ENV", "test")
 
     settings = Settings(_env_file=None)
 
