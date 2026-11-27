@@ -39,6 +39,7 @@ Supported variables are:
 | `AGENTHUB_LOG_LEVEL` | `INFO` | Minimum severity emitted by structured application logging. |
 | `AGENTHUB_CORS_ALLOWED_ORIGINS` | `["http://localhost:3000"]` | JSON list of browser origins allowed to call the API. |
 | `AGENTHUB_CORS_ALLOW_CREDENTIALS` | `true` | Allows credentials for explicitly configured origins. |
+| `AGENTHUB_DATABASE_URL` | Required | Async SQLAlchemy PostgreSQL URL; treat its password as a secret. |
 
 The local `.env` file is ignored by Git. `.env.example` contains no secrets and remains tracked.
 
@@ -55,16 +56,30 @@ Every HTTP response includes an `X-Correlation-ID`. A valid UUID supplied in the
 Available endpoints:
 
 - Liveness: `GET http://127.0.0.1:8000/api/v1/health`
+- Readiness: `GET http://127.0.0.1:8000/api/v1/ready`
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - ReDoc: `http://127.0.0.1:8000/redoc`
 - OpenAPI JSON: `http://127.0.0.1:8000/openapi.json`
 
-The health endpoint reports only whether the API process can respond. It does not claim that future databases or external services are ready.
+The liveness endpoint reports whether the API process can respond. The readiness endpoint executes `SELECT 1` and returns success only when PostgreSQL is reachable.
+
+## Database migrations
+
+Alembic reads the same `AGENTHUB_DATABASE_URL` setting as the application. From `apps/backend`:
+
+```bash
+uv run alembic upgrade head
+uv run alembic downgrade -1
+uv run alembic revision --autogenerate -m "describe schema change"
+```
+
+The initial revision is an intentionally empty persistence baseline. Business tables are introduced with their owning modules rather than being created prematurely.
 
 ## Test and check code quality
 
 ```bash
 uv run pytest -v
+AGENTHUB_TEST_DATABASE_URL="postgresql+asyncpg://..." uv run pytest -m integration -v
 uv run ruff check .
 uv run ruff format --check .
 ```

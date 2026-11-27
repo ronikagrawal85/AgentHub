@@ -15,6 +15,9 @@ environ.update(
         "AGENTHUB_APP_ENV": "test",
         "AGENTHUB_DEBUG": "false",
         "AGENTHUB_API_V1_PREFIX": "/api/v1",
+        "AGENTHUB_DATABASE_URL": (
+            "postgresql+asyncpg://agenthub:test@127.0.0.1:5432/agenthub_test"
+        ),
     }
 )
 
@@ -28,6 +31,9 @@ def test_settings() -> Settings:
         app_env="test",
         debug=False,
         api_v1_prefix="/api/v1",
+        database_url=(
+            "postgresql+asyncpg://agenthub:test@127.0.0.1:5432/agenthub_test"
+        ),
         _env_file=None,
     )
 

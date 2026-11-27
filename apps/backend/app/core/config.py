@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 AppEnvironment = Literal["development", "test", "staging", "production"]
@@ -22,6 +22,7 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:3000"]
     )
     cors_allow_credentials: bool = True
+    database_url: SecretStr
 
     @model_validator(mode="after")
     def validate_cors_configuration(self) -> "Settings":

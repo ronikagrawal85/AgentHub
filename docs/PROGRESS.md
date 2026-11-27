@@ -3,10 +3,10 @@
 ## Status summary
 
 - **Current phase:** Phase 1 — Project Foundation
-- **Current task:** Task 004 — Foundation API Hardening
+- **Current task:** Task 006 — Async Persistence Infrastructure
 - **Project state:** Initial monorepo and backend foundation implemented
-- **Application state:** FastAPI liveness API, global exception handling, structured logging, correlation IDs, and CORS implemented; business modules not started
-- **Last updated:** 2026-11-26
+- **Application state:** FastAPI foundation, healthy local PostgreSQL, async SQLAlchemy sessions, Alembic migrations, and database readiness implemented; business modules not started
+- **Last updated:** 2026-11-27
 
 Only confirmed work is recorded as complete. Planned features are not evidence of implementation.
 
@@ -19,15 +19,12 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Personal GitHub SSH authentication verified | Complete | Reported by the developer. |
 | Python 3.12.13 available | Complete | Reported by the developer. |
 | `uv` available | Complete | Reported by the developer. |
-| Docker Engine installed and running | Complete | Reported by the developer. |
+| Docker Engine installed and running | Complete | Docker Engine 28.1.1 was reached through the `default` context on 2026-11-27. |
 | Docker group membership configured | Complete | Reported by the developer. |
 | Repository branch setup | Complete | Reported by the developer. Current inspected branch: `feat/project-foundation`. |
 
 ## Pending foundation tasks
 
-- Verify Docker container execution.
-- Configure PostgreSQL and local Docker infrastructure.
-- Add SQLAlchemy and Alembic.
 - Implement authentication, workspace management, tenant isolation, and basic RBAC.
 - Add type checking when the backend foundation expands beyond the initial API.
 
@@ -43,7 +40,7 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Users | 1 | Not started | No implementation exists. |
 | Workspaces/organizations | 1 | Not started | No implementation exists. |
 | Memberships and RBAC | 1 | Not started | No implementation exists. |
-| PostgreSQL persistence | 1 | Not started | No configuration or implementation exists. |
+| PostgreSQL persistence | 1 | Complete | Healthy local PostgreSQL 16 container, async SQLAlchemy engine/sessions, Alembic baseline, readiness endpoint, rollback behavior, and integration tests verified. |
 | Redis caching and job coordination | 1–2 | Not started | No configuration or implementation exists. |
 | Qdrant vector storage | 2 | Not started | No configuration or implementation exists. |
 | Document storage | 2 | Not started | No implementation exists. |
@@ -60,9 +57,9 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 | Security and guardrails | 1–6 | Not started | No implementation exists. |
 | Background processing/Celery | 2 | Not started | No implementation exists. |
 | Synthetic enterprise dataset | 2 | Not started | No dataset exists. |
-| Automated backend tests | 1–8 | In progress | Sixteen FastAPI foundation, exception-handling, configuration, and observability tests pass; feature-specific suites remain pending. |
+| Automated backend tests | 1–8 | In progress | Twenty-one foundation and persistence tests pass, including real database connectivity and migration round-trip coverage; feature-specific suites remain pending. |
 | Frontend/Playwright tests | 7–8 | Not started | No test suite exists. |
-| Dockerized local application | 1–8 | Not started | Docker container execution is not yet verified; no application services are configured. |
+| Dockerized local application | 1–8 | In progress | PostgreSQL is configured in Compose; the API and later infrastructure services are not containerized. |
 | CI/CD | 8 | Not started | No workflow exists. |
 | Public demo deployment | 8 | Not started | No deployment has been performed. |
 
@@ -79,8 +76,71 @@ Only confirmed work is recorded as complete. Planned features are not evidence o
 
 ## Blockers and unverified prerequisites
 
-- Docker container execution still requires verification.
+- The active `desktop-linux` Docker context is offline. The system Docker Engine and PostgreSQL container are reachable through the `default` context.
 - No other blocker has been confirmed.
+
+## Task 006 — Async Persistence Infrastructure
+
+### Implemented
+
+- Added and locked SQLAlchemy with asyncio support, asyncpg, and Alembic.
+- Added required, secret-typed `AGENTHUB_DATABASE_URL` configuration.
+- Configured an asynchronous engine with connection pre-ping and hidden SQL parameters.
+- Configured an async session factory with explicit transaction ownership and retained state after commits.
+- Added a request-scoped FastAPI database dependency that rolls back failed work and never commits implicitly.
+- Added the shared SQLAlchemy declarative base and central model import registry for Alembic discovery.
+- Initialized Alembic with an async migration environment that shares application settings and ORM metadata.
+- Generated and applied an intentionally empty persistence baseline revision; business tables remain owned by future modules.
+- Added `GET /api/v1/ready`, which executes `SELECT 1` and reports readiness only when PostgreSQL is reachable.
+- Added tests for secret handling, readiness behavior, real database connectivity, failure rollback, and migration upgrade/downgrade.
+- Documented configuration, endpoints, migration commands, and integration test usage.
+
+### Verification evidence
+
+| Command or check | Actual result |
+| --- | --- |
+| PostgreSQL container health | Healthy; `pg_isready` reported the database accepts connections. |
+| Full backend test suite | Passed: 21 tests, including real readiness/connectivity and `base → head → base → head` migration verification; 1 existing upstream Starlette deprecation warning. |
+| Transaction rollback | Passed: exception path awaited `AsyncSession.rollback()` exactly once. |
+| `uv run alembic upgrade head` | Passed against the development database. |
+| `uv run alembic current` | `3333e5fee530 (head)`. |
+| `uv run alembic check` | Passed: no new upgrade operations detected. |
+| `uv run ruff check .` | Passed after formatting generated Alembic files. |
+
+### Remaining work
+
+- Implement the first business-owned ORM models and migrations with authentication and workspace modules.
+- Add tenant-isolation and authorization tests when tenant-owned persistence is introduced.
+- The upstream Starlette TestClient deprecation warning remains; unrelated dependency changes were not introduced.
+
+## Task 005 — Local PostgreSQL Infrastructure
+
+### Implemented
+
+- Added a root Compose configuration with a PostgreSQL 16 Alpine service.
+- Bound the database to loopback only, with configurable host port `5432`.
+- Required database name, user, and password through root environment variables rather than embedding credentials in Compose.
+- Added a root `.env.example` with local-development variable names and a replaceable sample password.
+- Added a Docker-managed named volume so database files survive container replacement.
+- Added a `pg_isready` health check with startup grace period, interval, timeout, and bounded retries.
+- Documented startup, status, shutdown, Docker context selection, and destructive volume removal behavior.
+
+### Verification evidence
+
+| Command or check | Actual result |
+| --- | --- |
+| `docker --context default version` | Client and server reached successfully; Docker Engine 28.1.1. |
+| `docker --context default run --rm hello-world` | Passed; the Engine pulled and executed a disposable container successfully. |
+| `docker compose version` | Docker Compose v2.24.6-desktop.1 is installed. |
+| Active Docker context | `desktop-linux`; its Docker Desktop daemon is not running. |
+| Default Docker context | Reachable system engine; one unrelated `formio-ce` container was running. |
+| Host port `5432` check | `ss` reported no listening socket; the default PostgreSQL port is available. |
+| `docker --context default compose --env-file .env.example config` | Passed; service, loopback port, health check, and named volume resolved successfully. |
+
+### Remaining work
+
+- PostgreSQL startup and backend persistence integration were subsequently completed and verified in Task 006.
+- Authentication, tenant-aware workspaces, RBAC, and the remaining Phase 1 deliverable are still pending.
 
 ## Task 004 — Foundation API Hardening
 

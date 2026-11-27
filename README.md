@@ -11,12 +11,27 @@ apps/backend/          FastAPI backend and its tests
 apps/frontend/         Future Next.js application
 mcp-servers/           Future independently runnable MCP servers
 datasets/              Synthetic, public, evaluation, and adversarial data
-infrastructure/        Future local and deployment infrastructure
+infrastructure/        Local and future deployment infrastructure
 scripts/               Repository automation and maintenance scripts
 docs/                  Architecture, decisions, learning notes, and trackers
 ```
 
-Only the FastAPI foundation is implemented at this stage. Databases, authentication, AI workflows, MCP servers, the frontend, and deployment infrastructure belong to later tasks.
+The FastAPI foundation and local PostgreSQL Compose configuration are implemented. Database integration, authentication, AI workflows, MCP servers, the frontend, and deployment infrastructure belong to later tasks.
+
+## Local PostgreSQL
+
+Docker Engine with the Compose plugin is required. The Compose service binds PostgreSQL only to the local machine and stores its data in a named Docker volume.
+
+```bash
+cp .env.example .env
+# Replace POSTGRES_PASSWORD in .env, then run:
+docker compose up -d postgres
+docker compose ps
+```
+
+When Docker Desktop is not running but the system Docker Engine is available, select it with `docker context use default` or run the commands with `docker --context default compose ...`.
+
+PostgreSQL is available at `127.0.0.1:5432` by default. Stop the container with `docker compose stop postgres`; remove the container with `docker compose down`. Neither command deletes the named database volume. Deliberately deleting the volume requires `docker compose down --volumes` and destroys the local database data.
 
 ## Backend quick start
 
@@ -37,4 +52,4 @@ The API is then available at `http://127.0.0.1:8000`, with documentation at `/do
 - [`docs/PROGRESS.md`](docs/PROGRESS.md) — verified implementation status and evidence.
 - [`docs/AI_LEARNING_TRACKER.md`](docs/AI_LEARNING_TRACKER.md) — the 31 core AI learning objectives.
 
-Do not commit secrets or local `.env` files. Copy the backend `.env.example` when local overrides are needed.
+Do not commit secrets or local `.env` files. Copy the root `.env.example` for Docker Compose settings and `apps/backend/.env.example` for backend overrides.
